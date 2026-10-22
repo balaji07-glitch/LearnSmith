@@ -5,6 +5,13 @@ import { detectSourceMetadataAndTopics } from './nvidia.ts';
 import { orchestrateLearningPack, orchestratePracticeQuestionAddition, orchestrateQuestionRegeneration } from './orchestrator.ts';
 import { executeQualityEngine } from './qualityEngine.ts';
 import type { Question } from '../src/types/index.ts';
+import {
+  authenticateRequest,
+  getStudentAssessmentResults,
+  requireTeacher,
+  saveStudentAssessmentResult,
+  StudentResultsError,
+} from './studentResults.ts';
 
 const router = Router();
 
@@ -638,10 +645,31 @@ router.get('/units/:id/student', (req: Request, res: Response) => {
   }
 });
 
-router.post('/units/:id/student/assessments/:assetId/submit', (req: Request, res: Response) => {
+router.get('/units/:id/student/assessment-results', async (req: Request, res: Response) => {
   try {
     const unit = db.getUnit(req.params.id);
     if (!unit) return res.status(404).json({ error: 'Unit not found' });
+
+    const user = await authenticateRequest(req);
+    requireTeacher(user);
+    const results = await getStudentAssessmentResults(unit.id);
+    res.json({ results });
+  } catch (err: any) {
+    res.status(err instanceof StudentResultsError ? err.status : 500).json({
+      error: err.message || 'Failed to load student assessment results',
+    });
+  }
+});
+
+router.post('/units/:id/student/assessments/:assetId/submit', async (req: Request, res: Response) => {
+  try {
+    const unit = db.getUnit(req.params.id);
+    if (!unit) return res.status(404).json({ error: 'Unit not found' });
+
+    const user = await authenticateRequest(req);
+    if (user.user_metadata?.role !== 'student') {
+      return res.status(403).json({ error: 'Sign in with a student account to submit an assessment.' });
+    }
 
     const asset = db.getAsset(req.params.assetId);
     if (!asset || asset.unitId !== unit.id) {
@@ -686,9 +714,27 @@ router.post('/units/:id/student/assessments/:assetId/submit', (req: Request, res
     });
     const score = results.filter((result) => result.correct).length;
 
-    res.json({ score, total: questions.length, results });
+    const savedResult = await saveStudentAssessmentResult({
+      unit_id: unit.id,
+      assessment_id: asset.id,
+      assessment_title: asset.title,
+      assessment_type: asset.type,
+      student_name: typeof user.user_metadata?.full_name === 'string'
+        ? user.user_metadata.full_name
+        : user.email?.split('@')[0] || 'Student',
+      student_email: user.email || '',
+      student_id: typeof user.user_metadata?.student_id === 'string'
+        ? user.user_metadata.student_id
+        : null,
+      score,
+      total: questions.length,
+    });
+
+    res.json({ score, total: questions.length, results, submissionId: savedResult.id });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(err instanceof StudentResultsError ? err.status : 500).json({
+      error: err.message || 'Failed to submit assessment',
+    });
   }
 });
 

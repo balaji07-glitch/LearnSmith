@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { api } from './api.ts';
 import { Unit } from './types/index.ts';
-import { LoginPage, AuthUser } from './pages/LoginPage.tsx';
+import { LoginPage } from './pages/LoginPage.tsx';
+import type { AuthUser } from './auth.ts';
+import { toAuthUser } from './auth.ts';
+import { supabase } from './supabase.ts';
 import { Sidebar } from './components/Sidebar.tsx';
 import { Header } from './components/Header.tsx';
 import { Dashboard } from './pages/Dashboard.tsx';
@@ -21,6 +24,7 @@ import { StudentMode } from './pages/StudentMode.tsx';
 import { StudentHome } from './pages/StudentHome.tsx';
 import { StudentModeGate } from './pages/StudentModeGate.tsx';
 import { ExportCenter } from './pages/ExportCenter.tsx';
+import { StudentResults } from './pages/StudentResults.tsx';
 import { Moon, Sun } from 'lucide-react';
 
 type Theme = 'light' | 'dark';
@@ -44,6 +48,7 @@ export default function App() {
     localStorage.getItem('ls_theme') === 'dark' ? 'dark' : 'light'
   );
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -51,7 +56,29 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    localStorage.removeItem('ls_auth_user');
+    if (!supabase) {
+      setAuthReady(true);
+      return;
+    }
+
+    let active = true;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      setAuthUser(session?.user ? toAuthUser(session.user) : null);
+      setAuthReady(true);
+    });
+
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (error) console.error('Failed to restore Supabase session:', error);
+      setAuthUser(data.session?.user ? toAuthUser(data.session.user) : null);
+      setAuthReady(true);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const [currentView, setCurrentView] = useState<string>('dashboard');
@@ -169,28 +196,27 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('ls_auth_user');
     setAuthUser(null);
     setStudentUnitId(null);
     setCurrentView('dashboard');
     setActiveUnit(null);
     window.history.replaceState({ view: 'dashboard', unitId: null, assetId: null }, '', window.location.href);
+    if (supabase) {
+      void supabase.auth.signOut().then(({ error }) => {
+        if (error) console.error('Failed to sign out of Supabase:', error);
+      });
+    }
   };
 
   const handleExitStudentPreview = () => {
-    setCurrentView('unit_overview');
-    setGateStudent(null);
-    if (activeUnit) {
-      window.history.pushState(
-        { view: 'unit_overview', unitId: activeUnit.id, assetId: null },
-        '',
-        window.location.href
-      );
-    }
+    setStudentUnitId(null);
   };
 
   // Show login gate
   if (!authUser) {
+    if (!authReady) {
+      return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-sm text-slate-300">Restoring secure session...</div>;
+    }
     return (
       <>
         <LoginPage onLogin={handleLogin} />
@@ -209,7 +235,7 @@ export default function App() {
             unitId={studentUnitId}
             authUser={authUser}
             onLogout={handleLogout}
-            onExit={() => setStudentUnitId(null)} // back to unit picker
+            onExit={handleExitStudentPreview}
           />
           <ThemeToggle theme={theme} onToggle={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')} />
         </>
@@ -236,6 +262,7 @@ export default function App() {
         <StudentModeGate
           onSuccess={(student) => {
             setGateStudent(student);
+            setStudentUnitId(activeUnit.id);
             setShowStudentGate(false);
             setCurrentView('unit_student');
           }}
@@ -253,8 +280,8 @@ export default function App() {
         <StudentMode
           unitId={activeUnit.id}
           authUser={gateStudent}
-          onExit={handleExitStudentPreview}
-          onLogout={handleExitStudentPreview}
+          onExit={() => setStudentUnitId(null)}
+          onLogout={handleLogout}
         />
         <ThemeToggle theme={theme} onToggle={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')} />
       </>
@@ -375,6 +402,13 @@ export default function App() {
           {currentView === 'unit_versions' && activeUnit && (
             <VersionHistory
               unitId={activeUnit.id}
+            />
+          )}
+
+          {currentView === 'unit_student_results' && activeUnit && (
+            <StudentResults
+              unitId={activeUnit.id}
+              onNavigate={handleNavigate}
             />
           )}
 

@@ -236,6 +236,20 @@ export interface ActivityLog {
   createdAt: string;
 }
 
+export interface StudentAssessmentResult {
+  id: string;
+  unit_id: string;
+  assessment_id: string;
+  assessment_title: string;
+  assessment_type: 'quiz' | 'practice';
+  student_name: string;
+  student_email: string;
+  student_id: string | null;
+  score: number;
+  total: number;
+  submitted_at: string;
+}
+
 export interface AlignmentMatrixRow {
   itemId: string;
   itemType: string;

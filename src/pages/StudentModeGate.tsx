@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { X, GraduationCap, Eye, EyeOff, Sparkles, UserPlus, LogIn } from "lucide-react";
-import { AuthUser } from "./LoginPage.tsx";
+import { X, GraduationCap, Eye, EyeOff, UserPlus, LogIn } from "lucide-react";
+import { toAuthUser, type AuthUser } from "../auth.ts";
+import { hasSupabaseAuthConfig, supabase } from "../supabase.ts";
 
 interface Props {
   onSuccess: (student: AuthUser) => void;
@@ -17,6 +18,7 @@ export const StudentModeGate: React.FC<Props> = ({ onSuccess, onCancel }) => {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,7 +29,7 @@ export const StudentModeGate: React.FC<Props> = ({ onSuccess, onCancel }) => {
 
   const reset = () => {
     setName(""); setEmail(""); setPassword(""); setConfirmPw("");
-    setStudentId(""); setSchool(""); setErrors({});
+    setStudentId(""); setSchool(""); setErrors({}); setMessage(null);
   };
 
   const validate = () => {
@@ -39,32 +41,59 @@ export const StudentModeGate: React.FC<Props> = ({ onSuccess, onCancel }) => {
       if (password !== confirmPw) errs.confirmPw = "Passwords do not match";
     }
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Valid email required";
-    if (!password || password.length < 4) errs.password = "At least 4 characters";
+    if (!password || password.length < 8) errs.password = "At least 8 characters";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    if (!hasSupabaseAuthConfig || !supabase) {
+      setMessage("Authentication is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to the deployment settings.");
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
-      onSuccess({
-        role: "student",
-        name: mode === "signup" ? name : (email.split("@")[0] || "Student"),
-        email,
-        studentId: mode === "signup" ? studentId : undefined,
-        school: mode === "signup" ? school : undefined,
-      });
+    setMessage(null);
+    try {
+      if (mode === "signup") {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              role: "student",
+              full_name: name.trim(),
+              student_id: studentId.trim(),
+              school: school.trim(),
+            },
+          },
+        });
+        if (error) throw error;
+        if (!data.session || !data.user) {
+          setMessage("Account created. Check your email to confirm your address, then sign in.");
+          return;
+        }
+        onSuccess(toAuthUser(data.user));
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error) throw error;
+        if (!data.user) throw new Error("Sign-in succeeded but no user profile was returned.");
+        const student = toAuthUser(data.user);
+        if (student.role !== "student") {
+          await supabase.auth.signOut();
+          throw new Error("This account is not registered as a student.");
+        }
+        onSuccess(student);
+      }
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Authentication failed. Please try again.");
+    } finally {
       setLoading(false);
-    }, 600);
-  };
-
-  const fillDemo = () => {
-    setName("Alex Johnson"); setEmail("alex.j@students.greenwood.edu");
-    setStudentId("STU-2024-0847"); setSchool("Greenwood High School");
-    setPassword("demo1234"); setConfirmPw("demo1234");
-    setErrors({});
+    }
   };
 
   return (
@@ -165,11 +194,10 @@ export const StudentModeGate: React.FC<Props> = ({ onSuccess, onCancel }) => {
             </div>
           )}
 
-          {mode === "signup" && (
-            <button type="button" onClick={fillDemo} className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-white/20 text-xs text-slate-400 hover:text-white hover:border-white/40 transition-colors">
-              <Sparkles className="w-3.5 h-3.5" />
-              Fill with demo details
-            </button>
+          {message && (
+            <p role="alert" className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+              {message}
+            </p>
           )}
 
           <button

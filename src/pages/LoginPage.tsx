@@ -1,31 +1,22 @@
 import React, { useState } from "react";
+import type { AuthUser } from "../auth.ts";
+import { toAuthUser } from "../auth.ts";
+import { hasSupabaseAuthConfig, supabase } from "../supabase.ts";
 import {
   BookOpen,
   GraduationCap,
   ChevronRight,
   Eye,
   EyeOff,
-  Sparkles,
   ShieldCheck,
   ArrowLeft,
   UserPlus,
   LogIn,
 } from "lucide-react";
 
-export type UserRole = "teacher" | "student";
+export type { AuthUser } from "../auth.ts";
+export type UserRole = AuthUser["role"];
 export type AuthMode = "signin" | "signup";
-
-export interface AuthUser {
-  role: UserRole;
-  name: string;
-  email: string;
-  school?: string;
-  subject?: string;
-  employeeId?: string;
-  studentId?: string;
-  grade?: string;
-  section?: string;
-}
 
 interface Props {
   onLogin: (user: AuthUser) => void;
@@ -46,6 +37,7 @@ export const LoginPage: React.FC<Props> = ({ onLogin, defaultRole, compact }) =>
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState<string | null>(null);
 
   // Shared fields
   const [name, setName] = useState("");
@@ -66,6 +58,7 @@ export const LoginPage: React.FC<Props> = ({ onLogin, defaultRole, compact }) =>
     setSchool(""); setSubject(""); setEmployeeId("");
     setStudentId("");
     setErrors({});
+    setMessage(null);
   };
 
   const validate = () => {
@@ -75,8 +68,8 @@ export const LoginPage: React.FC<Props> = ({ onLogin, defaultRole, compact }) =>
     if (isSignUp && !name.trim()) errs.name = "Full name is required";
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       errs.email = "Valid email is required";
-    if (!password || password.length < 4)
-      errs.password = "Password must be at least 4 characters";
+    if (!password || password.length < 8)
+      errs.password = "Password must be at least 8 characters";
     if (isSignUp && password !== confirmPassword)
       errs.confirmPassword = "Passwords do not match";
 
@@ -93,44 +86,56 @@ export const LoginPage: React.FC<Props> = ({ onLogin, defaultRole, compact }) =>
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    setLoading(true);
-    setTimeout(() => {
-      if (selectedRole === "teacher") {
-        onLogin({
-          role: "teacher",
-          name: authMode === "signin" ? email.split("@")[0] : name,
-          email,
-          school: authMode === "signup" ? school : undefined,
-          subject: authMode === "signup" ? subject : undefined,
-          employeeId: authMode === "signup" ? employeeId : undefined,
-        });
-      } else {
-        onLogin({
-          role: "student",
-          name: authMode === "signin" ? (email.split("@")[0] || studentId) : name,
-          email,
-          studentId: authMode === "signup" ? studentId : undefined,
-          school: authMode === "signup" ? school : undefined,
-        });
-      }
-      setLoading(false);
-    }, 700);
-  };
-
-  const fillDemo = () => {
-    if (selectedRole === "teacher") {
-      setName("Sarah Mitchell"); setEmail("sarah@greenwood.edu");
-      setSchool("Greenwood High School"); setSubject("Computer Science / Networking");
-      setEmployeeId("TCH-2024-001"); setPassword("demo1234"); setConfirmPassword("demo1234");
-    } else {
-      setName("Alex Johnson"); setEmail("alex.j@students.greenwood.edu");
-      setSchool("Greenwood High School");
-      setStudentId("STU-2024-0847"); setPassword("demo1234"); setConfirmPassword("demo1234");
+    if (!hasSupabaseAuthConfig || !supabase) {
+      setMessage("Authentication is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your deployment settings.");
+      return;
     }
-    setErrors({});
+    setLoading(true);
+    setMessage(null);
+    try {
+      if (authMode === "signup") {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              role: selectedRole,
+              full_name: name.trim(),
+              school: school.trim(),
+              subject: subject.trim(),
+              employee_id: employeeId.trim(),
+              student_id: studentId.trim(),
+            },
+          },
+        });
+        if (error) throw error;
+        if (!data.session || !data.user) {
+          setMessage("Account created. Check your email to confirm your address, then sign in.");
+          return;
+        }
+        onLogin(toAuthUser(data.user));
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error) throw error;
+        if (!data.user) throw new Error("Sign-in succeeded but no user profile was returned.");
+        const user = toAuthUser(data.user);
+        if (user.role !== selectedRole) {
+          await supabase.auth.signOut();
+          throw new Error(`This account is registered as a ${user.role}. Select the matching sign-in role.`);
+        }
+        onLogin(user);
+      }
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Authentication failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const roleColor = selectedRole === "teacher" ? "indigo" : "emerald";
@@ -423,16 +428,10 @@ export const LoginPage: React.FC<Props> = ({ onLogin, defaultRole, compact }) =>
                 </div>
               )}
 
-              {/* Demo fill */}
-              {authMode === "signup" && (
-                <button
-                  type="button"
-                  onClick={fillDemo}
-                  className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-white/20 text-xs text-slate-400 hover:text-white hover:border-white/40 transition-colors"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Fill with demo details
-                </button>
+              {message && (
+                <p role="alert" className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                  {message}
+                </p>
               )}
 
               {/* Submit */}

@@ -13,6 +13,7 @@ import {
   FileCheck,
   Target,
   RefreshCw,
+  ClipboardList,
 } from 'lucide-react';
 
 interface Props {
@@ -64,6 +65,13 @@ export const UnitOverview: React.FC<Props> = ({ unitId, onNavigate }) => {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => onNavigate('unit_student_results', unitId)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-sm font-semibold transition-colors"
+            >
+              <ClipboardList className="w-4 h-4" />
+              <span>Student Results</span>
+            </button>
             <button
               onClick={() => onNavigate('unit_student', unitId)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-sm font-semibold transition-colors"

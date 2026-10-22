@@ -10,9 +10,22 @@ import {
   AlignmentMatrixRow,
   UnitOverviewSummary,
   ActivityLog,
+  StudentAssessmentResult,
 } from './types/index.ts';
+import { supabase } from './supabase.ts';
 
 const API_BASE = '/api';
+
+async function authenticatedFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers);
+  if (supabase) {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    const token = data.session?.access_token;
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+  }
+  return fetch(input, { ...init, headers });
+}
 
 export const api = {
   // Units
@@ -354,14 +367,23 @@ export const api = {
     total: number;
     results: { questionId: string; correct: boolean; correctAnswer: string; explanation: string; incorrectReason: string }[];
   }> {
-    const res = await fetch(`${API_BASE}/units/${unitId}/student/assessments/${assetId}/submit`, {
+    const res = await authenticatedFetch(`${API_BASE}/units/${unitId}/student/assessments/${assetId}/submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ answers }),
     });
     if (!res.ok) {
-      const err = await res.json();
+      const err = await res.json().catch(() => ({}));
       throw new Error(err.error || 'Failed to submit assessment');
+    }
+    return res.json();
+  },
+
+  async getStudentAssessmentResults(unitId: string): Promise<{ results: StudentAssessmentResult[] }> {
+    const res = await authenticatedFetch(`${API_BASE}/units/${unitId}/student/assessment-results`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to load student assessment results');
     }
     return res.json();
   },

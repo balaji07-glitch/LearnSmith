@@ -38,8 +38,9 @@ Every generated micro-unit produces 5 synchronized, curriculum-aligned assets:
 - **Frontend**: React 19, TypeScript, Tailwind CSS v4, Lucide Icons, Motion
 - **Backend**: Node.js, Express, Vite middleware mode in development
 - **AI Engine**: NVIDIA's OpenAI-compatible chat completions API, using `meta/llama-3.3-70b-instruct` by default
+- **Authentication & Assessment Results**: Supabase Auth with server-verified student submissions and teacher-restricted results
 - **PDF Extraction**: `pdfjs-dist` preserving page numbers, paragraphs, and chunks
-- **Database Persistence**: Persistent JSON relational store in `.data/eduforge-store.json` supporting ACID atomic writes and cross-session persistence
+- **Database Persistence**: JSON relational store for learning-pack data; Supabase Postgres for durable student assessment results
 - **Quality Engine**: Deterministic string similarity (token Jaccard), answer-key matrix validation, leakage scanners, and deep semantic evaluation
 
 ---
@@ -49,21 +50,60 @@ Every generated micro-unit produces 5 synchronized, curriculum-aligned assets:
 ### 1. Prerequisites
 - Node.js 20+
 - `NVIDIA_API_KEY` (configured in your environment or `.env`; create a key in the NVIDIA API Catalog)
+- A Supabase project with Email Auth enabled
 
 ### 2. Environment Setup
 Create a `.env` file in the project root:
 ```env
 NVIDIA_API_KEY="your-nvidia-api-key"
 NVIDIA_MODEL="meta/llama-3.3-70b-instruct"
+VITE_SUPABASE_URL="https://your-project.supabase.co"
+VITE_SUPABASE_ANON_KEY="your-supabase-anon-key"
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_ANON_KEY="your-supabase-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-supabase-service-role-key"
+SUPABASE_TEACHER_EMAILS="teacher@school.edu"
 PORT=3000
 ```
 
-### 3. Install Dependencies
+The browser uses the `VITE_SUPABASE_*` values. The server uses the non-`VITE_` Supabase URL, anon key, and service-role key to verify users and write results. **Never expose the service-role key to the browser.**
+
+### 3. Create the assessment-results table
+In the Supabase SQL Editor, run:
+```sql
+create table if not exists public.student_assessment_results (
+  id uuid primary key default gen_random_uuid(),
+  unit_id text not null,
+  assessment_id text not null,
+  assessment_title text not null,
+  assessment_type text not null check (assessment_type in ('quiz', 'practice')),
+  student_name text not null,
+  student_email text not null,
+  student_id text,
+  score integer not null,
+  total integer not null,
+  submitted_at timestamptz not null default now(),
+  constraint valid_assessment_score check (total > 0 and score >= 0 and score <= total)
+);
+
+create index if not exists student_assessment_results_unit_submitted_idx
+  on public.student_assessment_results (unit_id, submitted_at desc);
+
+alter table public.student_assessment_results enable row level security;
+revoke all on public.student_assessment_results from anon, authenticated;
+grant select, insert on public.student_assessment_results to service_role;
+```
+
+Sign up teacher and student accounts through the app. Add each teacher's confirmed sign-in email to `SUPABASE_TEACHER_EMAILS` (comma-separated) in the hosting provider's server environment variables. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as build environment variables too, then redeploy. Supabase Email Auth confirmation can be enabled or disabled in the Supabase project settings.
+
+Teachers can open a unit and choose **Student Results**. Student quiz and practice submissions are saved in Supabase and are displayed with student name, ID/email, score, and submission time. Teacher result access requires a valid Supabase session and an email listed in `SUPABASE_TEACHER_EMAILS`.
+
+### 4. Install Dependencies
 ```bash
 npm install
 ```
 
-### 4. Run the Full-Stack Dev Server
+### 5. Run the Full-Stack Dev Server
 ```bash
 npm run dev
 ```
