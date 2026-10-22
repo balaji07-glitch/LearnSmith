@@ -1,0 +1,311 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --glass-line: rgba(255, 255, 255, 0.72);
+    --glass-border: rgba(112, 139, 151, 0.24);
+    --glass-shadow: 0 14px 36px rgba(43, 67, 77, 0.09);
+    --glass-dark: rgba(22, 37, 48, 0.82);
+    --glass-dark-line: rgba(255, 255, 255, 0.14);
+    --surface-white: rgba(255, 255, 255, 0.2);
+    --surface-white-border: rgba(255, 255, 255, 0.86);
+    --surface-soft: rgba(255, 255, 255, 0.12);
+    --surface-soft-border: rgba(255, 255, 255, 0.28);
+    --surface-slate-50: rgba(235, 245, 246, 0.34);
+    --surface-slate-50-alpha: rgba(241, 248, 248, 0.28);
+    --surface-slate-100: rgba(221, 233, 235, 0.56);
+    --surface-slate-900: rgba(22, 37, 48, 0.54);
+    --surface-slate-900-alpha: rgba(18, 34, 45, 0.62);
+    --surface-slate-800-alpha: rgba(255, 255, 255, 0.08);
+    --surface-slate-950-alpha: rgba(9, 21, 31, 0.36);
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #0f172a;
+    background-color: #dce8eb;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(54, 99, 109, 0.07) 0, rgba(54, 99, 109, 0.07) 1px, transparent 1px, transparent 42px),
+      repeating-linear-gradient(90deg, rgba(54, 99, 109, 0.06) 0, rgba(54, 99, 109, 0.06) 1px, transparent 1px, transparent 42px),
+      linear-gradient(118deg, rgba(89, 177, 162, 0.48) 0%, rgba(184, 224, 213, 0.2) 34%, transparent 55%),
+      linear-gradient(302deg, rgba(128, 151, 198, 0.42) 0%, rgba(207, 204, 229, 0.2) 38%, transparent 62%),
+      linear-gradient(180deg, #dce8eb 0%, #d6e1e8 100%);
+    background-attachment: fixed;
+  }
+
+  code, pre, kbd {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Shared glass surfaces keep the existing page layouts while adding depth. */
+[class~="bg-white"] {
+  background-color: var(--surface-white) !important;
+  border-color: var(--surface-white-border) !important;
+  box-shadow: 0 20px 48px rgba(35, 63, 76, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.96), inset 0 -1px 0 rgba(255, 255, 255, 0.28);
+  -webkit-backdrop-filter: blur(30px) saturate(175%);
+  backdrop-filter: blur(30px) saturate(175%);
+}
+
+[class~="bg-slate-50"] {
+  background-color: var(--surface-slate-50) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(150%);
+}
+
+.app-shell,
+.student-home,
+.student-mode {
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+[class*="bg-slate-50/"] {
+  background-color: var(--surface-slate-50-alpha) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+}
+
+[class~="bg-slate-100"] {
+  background-color: var(--surface-slate-100) !important;
+}
+
+[class~="bg-slate-900"] {
+  background-color: var(--surface-slate-900) !important;
+  border-color: var(--glass-dark-line);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12), 12px 0 34px rgba(14, 35, 46, 0.1);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  backdrop-filter: blur(28px) saturate(150%);
+}
+
+[class*="bg-slate-900/"] {
+  background-color: var(--surface-slate-900-alpha) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  backdrop-filter: blur(18px) saturate(135%);
+}
+
+[class*="bg-slate-800/"] {
+  background-color: var(--surface-slate-800-alpha) !important;
+  border-color: var(--glass-dark-line);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  backdrop-filter: blur(14px) saturate(130%);
+}
+
+[class*="bg-slate-950/"] {
+  background-color: var(--surface-slate-950-alpha) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  backdrop-filter: blur(14px) saturate(130%);
+}
+
+[class~="bg-white/5"],
+[class~="bg-white/[0.06]"] {
+  background-color: var(--surface-soft) !important;
+  border-color: var(--surface-soft-border) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 16px 36px rgba(4, 12, 20, 0.12);
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
+  backdrop-filter: blur(28px) saturate(155%);
+}
+
+[class*="from-indigo-50/"],
+[class*="via-white"] {
+  background-image: linear-gradient(118deg, rgba(255, 255, 255, 0.42), rgba(205, 232, 236, 0.24) 56%, rgba(201, 235, 220, 0.3)) !important;
+  background-color: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  box-shadow: 0 20px 48px rgba(35, 63, 76, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(160%);
+}
+
+[class~="border-slate-200"] {
+  border-color: var(--glass-border) !important;
+}
+
+.app-shell main div[class*="rounded-2xl"][class*="border"],
+.app-shell main div[class*="rounded-3xl"][class*="border"],
+.student-home main div[class*="rounded-2xl"][class*="border"],
+.student-home main div[class*="rounded-3xl"][class*="border"],
+.student-mode main div[class*="rounded-2xl"][class*="border"],
+.student-mode main div[class*="rounded-3xl"][class*="border"] {
+  border-color: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 16px 38px rgba(35, 63, 76, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(24px) saturate(155%);
+  backdrop-filter: blur(24px) saturate(155%);
+}
+
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 640px) {
+  aside {
+    width: 4rem;
+    min-width: 4rem;
+  }
+
+  aside > div:first-child > div > div:last-child,
+  aside > div:nth-child(2) > div:first-child > div,
+  aside > div:nth-child(2) > div:nth-child(2) > div,
+  aside p,
+  aside button span {
+    display: none;
+  }
+
+  aside > div:first-child {
+    padding: 1rem;
+  }
+
+  aside > div:first-child > div {
+    justify-content: center;
+  }
+
+  aside > div:nth-child(2) {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  aside nav button {
+    justify-content: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  aside > div:last-child {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  aside > div:last-child button {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  aside > div:last-child > div {
+    justify-content: center;
+  }
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline-color: rgba(13, 148, 136, 0.72);
+}
+
+input,
+select,
+textarea {
+  background-color: rgba(255, 255, 255, 0.68);
+  -webkit-backdrop-filter: blur(16px) saturate(145%);
+  backdrop-filter: blur(16px) saturate(145%);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --glass-border: rgba(154, 196, 196, 0.22);
+  --glass-dark-line: rgba(154, 196, 196, 0.2);
+  --surface-white: rgba(39, 66, 74, 0.92);
+  --surface-white-border: rgba(154, 196, 196, 0.22);
+  --surface-soft: rgba(39, 66, 74, 0.92);
+  --surface-soft-border: rgba(154, 196, 196, 0.22);
+  --surface-slate-50: rgba(28, 52, 60, 0.88);
+  --surface-slate-50-alpha: rgba(31, 56, 64, 0.82);
+  --surface-slate-100: rgba(71, 95, 102, 0.72);
+  --surface-slate-900: rgba(20, 45, 54, 0.97);
+  --surface-slate-900-alpha: rgba(19, 42, 50, 0.78);
+  --surface-slate-800-alpha: rgba(42, 70, 77, 0.72);
+  --surface-slate-950-alpha: rgba(19, 42, 50, 0.76);
+}
+
+html[data-theme="dark"] body {
+  color: #e2e8f0;
+  background-color: #19343c;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(178, 220, 214, 0.045) 0, rgba(178, 220, 214, 0.045) 1px, transparent 1px, transparent 42px),
+    repeating-linear-gradient(90deg, rgba(178, 220, 214, 0.035) 0, rgba(178, 220, 214, 0.035) 1px, transparent 1px, transparent 42px),
+    radial-gradient(ellipse at 15% 0%, rgba(20, 184, 166, 0.18), transparent 45%),
+    linear-gradient(180deg, #19343c 0%, #24444c 100%);
+}
+
+html[data-theme="dark"] [class*="from-slate-950"] {
+  background-color: #1d3a44 !important;
+  background-image: linear-gradient(135deg, #1d3a44 0%, #284b58 58%, #28555a 100%) !important;
+}
+
+html[data-theme="dark"] [class~="text-slate-900"],
+html[data-theme="dark"] [class~="text-slate-800"] {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] [class~="text-slate-700"],
+html[data-theme="dark"] [class~="text-slate-600"] {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] [class~="text-slate-500"],
+html[data-theme="dark"] [class~="text-slate-400"] {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] [class~="border-slate-200"],
+html[data-theme="dark"] [class~="border-slate-300"] {
+  border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  color: #e2e8f0;
+  background-color: rgba(29, 53, 61, 0.96) !important;
+  border-color: rgba(154, 196, 196, 0.28) !important;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #94a3b8;
+}
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+  }
+
+  [class~="bg-white"],
+  [class~="bg-slate-50"],
+  [class*="bg-slate-50/"],
+  [class~="bg-slate-100"],
+  [class~="bg-slate-900"],
+  [class*="bg-slate-900/"],
+  [class*="bg-slate-800/"],
+  [class*="bg-slate-950/"],
+  [class~="bg-white/5"],
+  [class~="bg-white/[0.06]"] {
+    background-color: #ffffff !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  .avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

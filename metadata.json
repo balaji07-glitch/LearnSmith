@@ -1,0 +1,6 @@
+{
+  "name": "LearnSmith — AI Learning Pack Studio for Teachers",
+  "description": "Generate, check, review, and approve classroom-ready micro-unit learning packs from trusted educational source material.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

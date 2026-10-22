@@ -1,0 +1,88 @@
+# EduForge — AI Learning Pack Studio for Teachers
+
+> **Generate. Check. Review. Approve.**
+> An AI-assisted micro-unit studio that converts trusted educational source material and explicit learning objectives into classroom-ready learning packs with built-in educational quality control, provenance, and student-safe publishing.
+
+---
+
+## 🌟 Why EduForge?
+
+Existing AI tools generate educational content as isolated, unverified text that frequently hallucinates unsupported facts, invents curriculum standards, or leaks answers.
+
+**EduForge transforms content generation into a controlled, verifiable engineering pipeline:**
+1. **Source Knowledge Boundary**: All claims must cite verified pages and chunks from uploaded textbooks, notes, or PDFs.
+2. **Objective Contract**: Every quiz question, practice item, and concept explanation is bound to explicit learning objectives (e.g. `OBJ-01`, `OBJ-02`). No orphan content is permitted.
+3. **Automated Quality Engine**: Runs 6 continuous checks before content reaches students (Objective Coverage, Deterministic Answer Key Alignment, Near-Duplicate Token Detection, Answer Leakage, Source Grounding, and Difficulty Calibration).
+4. **Controlled Item Regeneration**: Regenerate an individual quiz or practice question without destroying or altering the rest of the learning pack.
+5. **Version Lineage**: Every change (AI-generated, AI-regenerated, or Teacher-edited) creates a traceable new version without erasing history.
+6. **Student-Safe Publishing**: Student Mode strictly displays approved content, completely stripping AI model identifiers, provenance chunks, internal notes, and answer keys.
+
+---
+
+## 📦 What's Inside a Learning Pack?
+
+Every generated micro-unit produces 5 synchronized, curriculum-aligned assets:
+
+| # | Asset Type | Description |
+|---|------------|-------------|
+| **1** | **Concept Explanation** | Pedagogically rich explanation calibrated to grade level, highlighting core takeaways, target vocabulary, and verified grounding claims. |
+| **2** | **Guided / Worked Example** | Step-by-step inquiry scenario with sequential deduction steps and common student misconception corrections. |
+| **3** | **Formative Assessment Quiz** | Multiple-choice questions with objective bindings, source citations, distractor options, and rationales. |
+| **4** | **Differentiated Practice** | Tiered challenges featuring **Foundation** (scaffolded recall) and **Extension** (critical inquiry). |
+| **5** | **Revision Sheet** | High-yield summary with essential equations, rules, and core scientific relationships. |
+
+---
+
+## 🛠️ Architecture & Tech Stack
+
+- **Frontend**: React 19, TypeScript, Tailwind CSS v4, Lucide Icons, Motion
+- **Backend**: Node.js, Express, Vite middleware mode in development
+- **AI Engine**: NVIDIA's OpenAI-compatible chat completions API, using `meta/llama-3.3-70b-instruct` by default
+- **PDF Extraction**: `pdfjs-dist` preserving page numbers, paragraphs, and chunks
+- **Database Persistence**: Persistent JSON relational store in `.data/eduforge-store.json` supporting ACID atomic writes and cross-session persistence
+- **Quality Engine**: Deterministic string similarity (token Jaccard), answer-key matrix validation, leakage scanners, and deep semantic evaluation
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- Node.js 20+
+- `NVIDIA_API_KEY` (configured in your environment or `.env`; create a key in the NVIDIA API Catalog)
+
+### 2. Environment Setup
+Create a `.env` file in the project root:
+```env
+NVIDIA_API_KEY="your-nvidia-api-key"
+NVIDIA_MODEL="meta/llama-3.3-70b-instruct"
+PORT=3000
+```
+
+### 3. Install Dependencies
+```bash
+npm install
+```
+
+### 4. Run the Full-Stack Dev Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 🧪 Acceptance Test & Demo Walkthrough
+
+1. **Dashboard**: Click **Load Demo Unit** to populate the pre-configured *Grade 8 Photosynthesis* unit.
+2. **Source Workspace**: Inspect the 3 pages of verified textbook chunks, word counts, and page markers.
+3. **Objective Contract**: Review `OBJ-01`, `OBJ-02`, and `OBJ-03`. Modify constraints and witness the invalidation notice with one-click re-auditing.
+4. **Learning Pack**: Review the 5 generated assets. Notice the Formative Quiz is marked `NEEDS_REVISION` because Q4 is flagged as a near-duplicate.
+5. **Controlled Regeneration**: Click into the Quiz, select **Regenerate Q4**, choose "Duplicate" as the reason, enter `"Make this more application-based"`, and click **Generate New Version**. Only Q4 updates to v2; Q1–Q3 remain untouched!
+6. **Approval**: Click **Approve Asset** on the Quiz. The unit status transitions to **Ready**.
+7. **Student Mode**: Click **Student Mode** in the header. Notice that all teacher provenance, chunk IDs, AI models, and answer keys are hidden. Students can study the lesson and take the interactive self-check quiz.
+8. **Export Center**: Click **Export Pack** to print classroom handouts or copy clean Markdown.
+
+---
+
+## 🛡️ License
+Apache-2.0

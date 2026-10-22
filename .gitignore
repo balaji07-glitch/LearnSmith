@@ -1,0 +1,20 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Local database (auto-generated, do not commit)
+.data/
+
+# Uploaded PDFs (user content)
+*.pdf
+
+# Lock files (keep package-lock.json only)
+bun.lock
+
+# Generated source archive
+LearnSmith_full_code.zip
