@@ -111,19 +111,19 @@ router.post('/units/:id/source', async (req: Request, res: Response) => {
     let chunks: any[] = [];
     const fileName = name || (type === 'pdf' ? 'Uploaded_Curriculum.pdf' : 'Curriculum_Source_Notes');
 
-    if (fileBase64 && type === 'pdf') {
+    if (type === 'pdf' && fileBase64) {
       const buffer = Buffer.from(fileBase64, 'base64');
       const extracted = await extractTextFromPdf(buffer);
       extractedText = extracted.rawText;
       pageCount = extracted.pageCount;
       chunks = extracted.chunks;
-    } else if (rawText) {
+    } else if (type === 'text' && typeof rawText === 'string' && rawText.trim()) {
       const parsed = parsePlainTextAsSource(rawText);
       extractedText = parsed.rawText;
       pageCount = parsed.pageCount;
       chunks = parsed.chunks;
     } else {
-      return res.status(400).json({ error: 'No text or PDF provided' });
+      return res.status(400).json({ error: 'Provide a valid PDF file or non-empty plain text source.' });
     }
 
     // Dynamic metadata and topic detection strictly from the uploaded content
@@ -185,19 +185,19 @@ router.post('/units/create-from-source', async (req: Request, res: Response) => 
     let chunks: any[] = [];
     const fileName = name || (type === 'pdf' ? 'Uploaded_Curriculum.pdf' : 'Curriculum_Source_Notes');
 
-    if (fileBase64 && type === 'pdf') {
+    if (type === 'pdf' && fileBase64) {
       const buffer = Buffer.from(fileBase64, 'base64');
       const extracted = await extractTextFromPdf(buffer);
       extractedText = extracted.rawText;
       pageCount = extracted.pageCount;
       chunks = extracted.chunks;
-    } else if (rawText) {
+    } else if (type === 'text' && typeof rawText === 'string' && rawText.trim()) {
       const parsed = parsePlainTextAsSource(rawText);
       extractedText = parsed.rawText;
       pageCount = parsed.pageCount;
       chunks = parsed.chunks;
     } else {
-      return res.status(400).json({ error: 'No text or PDF provided' });
+      return res.status(400).json({ error: 'Provide a valid PDF file or non-empty plain text source.' });
     }
 
     // Dynamic metadata and topic detection

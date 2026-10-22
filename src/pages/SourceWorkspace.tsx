@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api.ts';
 import { Source, SourceChunk } from '../types/index.ts';
+import { readSourceFile } from '../utils/sourceFile.ts';
 import {
   UploadCloud,
   FileText,
@@ -57,36 +58,11 @@ export const SourceWorkspace: React.FC<Props> = ({ unitId, onNavigate }) => {
       setUploading(true);
       setError(null);
 
-      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          try {
-            const base64 = (reader.result as string).split(',')[1];
-            const res = await api.uploadSource(unitId, {
-              name: file.name,
-              type: 'pdf',
-              fileBase64: base64,
-            });
-            setSource(res.source);
-          } catch (err: any) {
-            setError(err?.message || 'Failed to process document');
-          } finally {
-            setUploading(false);
-          }
-        };
-        reader.readAsDataURL(file);
-      } else {
-        const text = await file.text();
-        const res = await api.uploadSource(unitId, {
-          name: file.name,
-          type: 'text',
-          rawText: text,
-        });
-        setSource(res.source);
-        setUploading(false);
-      }
+      const res = await api.uploadSource(unitId, await readSourceFile(file));
+      setSource(res.source);
     } catch (err: any) {
       setError(err?.message || 'Failed to process document');
+    } finally {
       setUploading(false);
     }
   };

@@ -8,10 +8,9 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<{
   pageCount: number;
   chunks: Omit<SourceChunk, 'id' | 'sourceId' | 'unitId'>[];
 }> {
-  // Check if buffer actually has a PDF header (%PDF)
-  const isPdfHeader = buffer.slice(0, 5).toString('ascii').startsWith('%PDF');
-  if (!isPdfHeader) {
-    return parsePlainTextAsSource(buffer.toString('utf-8'));
+  // The PDF header is allowed to appear within the first 1024 bytes.
+  if (buffer.subarray(0, 1024).indexOf('%PDF-') === -1) {
+    throw new Error('The uploaded file is not a valid PDF. Please choose a PDF document and try again.');
   }
 
   try {
@@ -83,15 +82,25 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<{
       }
     }
 
+    if (!fullText.replace(/--- PAGE \d+ ---/g, '').trim()) {
+      throw new Error(
+        'No selectable text was found in this PDF. It may contain scanned pages; scanned-document OCR is not supported yet.'
+      );
+    }
+
     return {
       rawText: fullText.trim(),
       pageCount,
       chunks,
     };
-  } catch (err: any) {
-    console.warn('PDF extraction with pdfjs-dist encountered error, falling back to text parsing:', err?.message);
-    // Fallback: If it's plain text or fallback
-    return parsePlainTextAsSource(buffer.toString('utf-8'));
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('No selectable text')) {
+      throw err;
+    }
+    console.error('PDF text extraction failed:', err);
+    throw new Error(
+      'Could not extract text from this PDF. The file may be damaged, password-protected, or use an unsupported PDF feature. Please try another PDF.'
+    );
   }
 }
 

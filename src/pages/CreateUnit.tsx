@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { api } from '../api.ts';
 import { Unit } from '../types/index.ts';
+import { readSourceFile } from '../utils/sourceFile.ts';
 import { Plus, Trash2, ArrowRight, BookOpen, Target, Sliders, AlertCircle, UploadCloud, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -41,38 +42,12 @@ export const CreateUnit: React.FC<Props> = ({ onNavigate, onSelectUnit }) => {
       setUploadingPdf(true);
       setError(null);
 
-      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          try {
-            const base64 = (reader.result as string).split(',')[1];
-            const res = await api.createUnitFromSource({
-              name: file.name,
-              type: 'pdf',
-              fileBase64: base64,
-            });
-            onSelectUnit(res.unit);
-            onNavigate('unit_source', res.unit.id);
-          } catch (err: any) {
-            setError(err?.message || 'Failed to process curriculum PDF');
-          } finally {
-            setUploadingPdf(false);
-          }
-        };
-        reader.readAsDataURL(file);
-      } else {
-        const text = await file.text();
-        const res = await api.createUnitFromSource({
-          name: file.name,
-          type: 'text',
-          rawText: text,
-        });
-        onSelectUnit(res.unit);
-        onNavigate('unit_source', res.unit.id);
-        setUploadingPdf(false);
-      }
+      const res = await api.createUnitFromSource(await readSourceFile(file));
+      onSelectUnit(res.unit);
+      onNavigate('unit_source', res.unit.id);
     } catch (err: any) {
       setError(err?.message || 'Failed to process curriculum file');
+    } finally {
       setUploadingPdf(false);
     }
   };
