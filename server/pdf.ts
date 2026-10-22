@@ -1,4 +1,8 @@
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 import type { SourceChunk } from '../src/types/index.ts';
+
+const require = createRequire(import.meta.url);
 
 /**
  * Extracts text from PDF bytes using pdfjs-dist, preserving page numbers and chunks.
@@ -18,18 +22,10 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<{
     // @ts-ignore
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
-    // Properly specify workerSrc for Node.js / serverless environment
-    if (pdfjsLib.GlobalWorkerOptions) {
-      try {
-        // Resolve worker URL properly in ESM
-        // @ts-ignore
-        const workerUrl = await import.meta.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-      } catch {
-        // Fallback if import.meta.resolve fails
-        pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-      }
-    }
+    // Use an absolute worker path so serverless runtimes don't resolve it from their cwd.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(
+      require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs')
+    ).href;
 
     const uint8Array = new Uint8Array(buffer);
     const loadingTask = pdfjsLib.getDocument({
